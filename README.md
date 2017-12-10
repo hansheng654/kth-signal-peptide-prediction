@@ -2,7 +2,7 @@
 This is a repository for project at KTH relate to subject DD2404
 Description:
 
-##Repository structure
+## Repository structure
 /bin . All python code are stored under /bin folder
 /data . All data are stored under /data folder
 /results . All Results are stored under /results folder, with each test-run stored into corresponding date
