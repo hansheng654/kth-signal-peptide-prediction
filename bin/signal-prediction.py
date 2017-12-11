@@ -50,8 +50,8 @@ def get_file_sequences(file_path):
 
 def load_data(load_tm = False):
     #load file into dictionaries
-    negative_sample_path = "training_data/negative_examples/"
-    positive_sample_path = "training_data/positive_examples/"
+    negative_sample_path = "data/negative_examples/"
+    positive_sample_path = "data/positive_examples/"
     cwd = os.getcwd()
     if platform=='win32':
         negative_sample_path = cwd+"\\"+negative_sample_path
@@ -95,7 +95,7 @@ def load_data(load_tm = False):
     X_train, X_test, y_train, y_test = train_test_split(X_sparse, y, test_size=0.2)
     return X_train, X_test, y_train, y_test
 
-X_train, X_test, y_train, y_test = load_data(False)
+X_train, X_test, y_train, y_test = load_data(True)
 
 def check_acc(trained_clf,clf_name):
     #print training and testing acc automatically 
@@ -118,7 +118,8 @@ def check_acc(trained_clf,clf_name):
 text_clf = BernoulliNB()
 text_clf.fit(X_train,y_train)
 check_acc(text_clf,"BernoulliNB")
-    
+
+#winner  
 text_clf = MultinomialNB()
 text_clf.fit(X_train,y_train)
 check_acc(text_clf,"MultinomialNB")
