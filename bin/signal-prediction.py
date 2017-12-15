@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB,BernoulliNB 
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC, SVC
+from sklearn import svm
 from sklearn.metrics import precision_recall_fscore_support
 
 
@@ -50,8 +50,8 @@ def get_file_sequences(file_path):
 
 def load_data(load_tm = False):
     #load file into dictionaries
-    negative_sample_path = "data/negative_examples/"
-    positive_sample_path = "data/positive_examples/"
+    negative_sample_path = "../data/negative_examples/"
+    positive_sample_path = "../data/positive_examples/"
     cwd = os.getcwd()
     if platform=='win32':
         negative_sample_path = cwd+"\\"+negative_sample_path
@@ -99,6 +99,12 @@ X_train, X_test, y_train, y_test = load_data(True)
 
 def check_acc(trained_clf,clf_name):
     #print training and testing acc automatically 
+    
+    #OUTPUTS
+    #produce a accuracy chart for different algorithms
+    #A distribution graph (TM/NON-TM)
+    #Result - prediction (using TM/NON-TM/Mixed training data)- input training model 
+    
     #training acc
     result_sk = trained_clf.predict(X_train)
     true_label =np.array(list(map(int,y_train)))
@@ -111,7 +117,12 @@ def check_acc(trained_clf,clf_name):
     true_label =np.array(list(map(int,y_test)))
     result_sk = np.array(list(map(int,result_sk)))
     acc = np.mean(result_sk == true_label) * 100.
-    print("Testing Accuracy, %s : %.2f%% \n" % (clf_name,acc))
+    print("Testing Accuracy, %s : %.2f%%" % (clf_name,acc))
+    
+    precision, recall, _,_ = precision_recall_fscore_support(true_label,result_sk,labels=[0,1])
+    print("neg precision %.4f, neg recall %.4f" % (precision[0], recall[0]))
+    print("pos precision %.4f, pos recall %.4f\n" % (precision[1], recall[1]))
+#    print("neg precision %.4f, neg recall %.4f\n" % (precision[2], recall[2]))
 
 
     
@@ -128,48 +139,10 @@ text_clf = LogisticRegression(penalty = 'l2') #works better on high dimentional 
 text_clf.fit(X_train,y_train)
 check_acc(text_clf,"Logistic Regression")
 
+linsvc = svm.SVC(C=10, kernel='linear', decision_function_shape='ovo')
+linsvc.fit(X_train, y_train)
+check_acc(linsvc, "SVC with linear kernel")
 
-#NN - same performance 
-
-from keras.models import Sequential
-from keras.layers import Dense,Dropout
-from keras.utils import to_categorical
-
-
-    
-#convert into one hot
-y_train_hot = to_categorical(y_train)
-y_test_hot = to_categorical(y_test)
-
-
-input_shape = X_train.get_shape()
-
-
-model = Sequential()
-model.add(Dense(32,activation='elu',input_dim = input_shape[1]))
-model.add(Dropout(0.4))
-model.add(Dense(32,activation='elu'))
-model.add(Dropout(0.4))
-model.add(Dense(16,activation='elu'))
-model.add(Dense(2, activation='sigmoid'))
-
-model.compile(optimizer='adam',
-              loss='categorical_crossentropy',
-              metrics=['accuracy']
-              )
-
-
-# Train the model, iterating on the data in batches of 32 samples
-hist = model.fit(X_train.toarray(), y_train_hot, epochs=100,
-          validation_data=(X_test.toarray(),y_test_hot),
-          batch_size= 128
-          ) 
-
-
-(loss, accuracy) = model.evaluate(X_test.toarray(), y_test_hot)
-print(accuracy)
-    
-    
     
     
     
