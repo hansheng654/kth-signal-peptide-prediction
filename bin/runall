@@ -131,7 +131,32 @@ def load_data(load_tm = False,split = 0.2,mix_tm = False,verbose = True):
 
     #split and shuffle
     X_train, X_test, y_train, y_test = train_test_split(X_sparse, y, test_size=split)
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train, y_test,transformer
+
+def __load_proteome(vectoriser,verbose = True):
+    #load file into dictionaries
+    datapath = "../data/proteome/*"
+    cwd = os.getcwd()
+    if platform=='win32':
+        datapath = cwd+"\\"+datapath
+        spliter = '\\'
+    else:
+        datapath = cwd+'/'+ datapath.replace('\\','/')
+        spliter = '/'
+#    X = []
+    pattern = re.compile("[X]+") #remove breaks in the sequence
+    proteome_files = {} 
+    for file in glob.glob(datapath):
+        fasta_sequences = get_file_sequences(file)
+        file_dic = {}
+        for name,sequence in fasta_sequences.items():
+            seq = pattern.sub('',sequence)
+            file_dic[name] = vectoriser.transform([seq])
+        if verbose:
+            print("Found {0} sequences in {1}".format(len(file_dic),file.split(spliter)[-1]))
+        proteome_files[file] = file_dic           
+    return proteome_files
+
 
 
 def check_acc(data,trained_clf,clf_name, verbose = True):
@@ -192,7 +217,7 @@ def model_performance_test(save_path,n_fold = 5,use_TM = False,mix_TM = False,ve
     models.append(('Bernoulli NavieBayes', BernoulliNB()))
     models.append(('Multinomia NavieBayes', MultinomialNB()))
     models.append(('Linear SVM', svm.SVC(kernel='linear', decision_function_shape='ovr')))
-    X,_, Y, _ = load_data(split = 0,load_tm= use_TM,mix_tm=mix_TM)
+    X,_, Y, _,_ = load_data(split = 0,load_tm= use_TM,mix_tm=mix_TM)
     # evaluate each model in turn
     results = []
     names = []
@@ -210,7 +235,7 @@ def model_performance_test(save_path,n_fold = 5,use_TM = False,mix_TM = False,ve
     # boxplot algorithm comparison
     fig = plt.figure()
     fig.subplots_adjust(bottom=0.2)
-    title = "Algorithm Comparison, Based on N-fold:{0}, with_TM_data? {1}".format(n_fold,use_TM)
+    title = "Algorithm Comparison, N-fold:{0}, Mixed_TM?:{2}, TM_data?: {1}".format(n_fold,use_TM,mix_TM)
     fig.suptitle(title)
     ax = fig.add_subplot(111)
     plt.boxplot(results)
@@ -233,7 +258,7 @@ def model_f_score_test(save_path, use_TM = False, mix_tm = False,verbose = False
         save_path: file path such as ../results/2017-12-12, that will be used to save output file
         mix_tm, indicate whether to mix_tm data for the f-score test
     '''
-    X_train, X_test, y_train, y_test = load_data(use_TM,split = 0.2,mix_tm = mix_tm,verbose = verbose)
+    X_train, X_test, y_train, y_test,_ = load_data(use_TM,split = 0.2,mix_tm = mix_tm,verbose = verbose)
     
     data = X_train, X_test, y_train, y_test
     data_list = np.zeros(shape = [8,4])
@@ -286,9 +311,57 @@ def model_f_score_test(save_path, use_TM = False, mix_tm = False,verbose = False
     
     
 
-def train_and_predict(save_path, mix_tm = True):
-    pass
-
+def train_and_predict(save_path, threshold = 0.5,mix_tm = True,verbose = True):
+    '''Train model using logistic regression, with n-gram 3:4, split 0
+    The trained model will be applied to predict proteomes under /data/proteome , must be in fasta format
+    Parameters:
+        save_path: file path such as ../results/2017-12-12, that will be used to save output files
+        mix_tm, indicate whether to mix_tm data for training
+    Outputs:
+        Each input proteome will associate with an output txt file containing accession and prediction
+        EG, >ACADADSA,1 indicate the accession ACADADSA contains a signal peptide in it.
+    '''
+    if platform=='win32':
+        spliter = '\\'
+    else:
+        spliter = '/'
+    
+    if verbose:
+        print("Load training dataset and training...")
+    X_train, _, y_train, _,transformer = load_data(True,split = 0,mix_tm = mix_tm,verbose = verbose)
+    PP_clf = LogisticRegression(penalty = 'l2') #works better on high dimentional sparse dataset
+    PP_clf.fit(X_train,y_train)
+    
+    if verbose:
+        print("Loading all proteomes, please wait...")
+    proteomes = __load_proteome(transformer,verbose)
+    
+    for file_path,file_dic in proteomes.items():
+        file_lines = list()
+        true_count = 0
+        for acc,vec_seq in file_dic.items():
+            r = PP_clf.predict_proba(vec_seq)
+            if r[0][1] >= threshold:
+                file_lines.append(acc+",1")
+                true_count += 1
+            else:
+                file_lines.append(acc+",0")
+        #save the file
+        if verbose:
+            print("# positive predictions: {0}/{1} ({2:0.2f}%) for file {3}".format(true_count,len(file_dic),(true_count/len(file_dic))*100,
+                  file_path.split(spliter)[-1]))
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        file_path = save_path+"{1}{0}_pred.txt".format(file_path.split(spliter)[-1],spliter)
+        print(file_path)
+        with open(file_path,'w') as file:
+            file.write("\n".join(file_lines))
+    if verbose:
+        print("all files saved under {0}".format(save_path))
+        
+            
+            
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Signal peptide prediction, Train/Test/Predict the following models:\
                                      Bernoulli NB, \
@@ -299,13 +372,18 @@ if __name__ == "__main__":
     performance_group = parser.add_argument_group()
     parser.add_argument('save_path',
                         help='Path to save outout result, eg ../results/2017-12-31')
-    performance_group.add_argument('-p', "--performance_test",action="store_true",
+    performance_group.add_argument('-pt', "--performance_test",action="store_true",
                         help='Run performance test, save to save_path')
     performance_group.add_argument('--nfold',type = int, help = "indicate how many n-fold",default = 3)
     
     f_test_group = parser.add_argument_group()
     f_test_group.add_argument('-f','--ftest',action="store_true",
                         help = "Run f-score test, save to save_path")
+    
+    predict_group = parser.add_argument_group()
+    predict_group.add_argument('-p',"--prediction",help = "Train on LR and predict proteomes under /data/proteomes/ directory",action = "store_true")
+    predict_group.add_argument('-t', "--threshold",default = 0.5, type = float,
+                        help = "Indicate the cut-off threshold for positive samples, default 0.5")
     group.add_argument('-i', "--input_mode",default = 0, type = int,
                         help = "input data mix-mode,  1 = non-TM only, 2 = TM only, otherwise mix-mode will be used")
     parser.add_argument("-q",'--quiet', default = False,action="store_true",
@@ -332,6 +410,8 @@ if __name__ == "__main__":
         model_f_score_test(save_path,use_TM= use_TM,mix_tm=mix_tm,verbose = verbose)
     if args.performance_test:
         model_performance_test(save_path,n_fold=args.nfold,verbose = verbose,use_TM= use_TM,mix_TM= mix_tm)
+    if args.prediction:
+        train_and_predict(save_path,threshold=args.threshold,verbose = verbose,mix_tm = mix_tm)
 #    save_path = "../results/2017-12-15/"
 
 
