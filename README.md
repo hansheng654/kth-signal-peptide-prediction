@@ -24,7 +24,7 @@ usage: runall [-h] [-pt] [--nfold NFOLD] [-f] [-p]
 There are 3 function groups, they are 1.Performance Test, 2.F-score test, 3. Prediction
 
 1. Perfromance test (-pt) train the model based on the data specified by [-i INPUT_MODE], and produce a graph thay compares all models. The graph is saved in the path speicifed by SAVEPATH. 
-   --nfold can be used as an additional argument to spcify the number of fold for cross-validation. Default to 3.
+   * --nfold can be used as an additional argument to spcify the number of fold for cross-validation. Default to 3.
    ```
    example: ./runall ../results/2017-12-26 -pt --nfold 5
    ```
@@ -37,7 +37,7 @@ There are 3 function groups, they are 1.Performance Test, 2.F-score test, 3. Pre
    Above code will run f-score test with non_TM data only
    
 3. Prediction (-p), Train Logistic regression and run predictions on files located under /data/proteomes/ ,files must be in fasta format.
-    -t can be used to indicate the THRESHOLD for classify a sample into positive. Default to 0.5
+   * -t can be used to indicate the THRESHOLD for classify a sample into positive. Default to 0.5
 
 [-i INPUT_MODE] is the argument for specify which data is used for training. 
   * 1 = non-TM only, 
