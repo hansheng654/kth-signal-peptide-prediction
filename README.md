@@ -32,7 +32,7 @@ There are 3 function groups, they are 1.Performance Test, 2.F-score test, 3. Pre
 
 2. F-score test (-f) train the models with data specified by INPUT_MODE based on 80/20 data split, and save precision/recall and f-beta score into SAVEPATH
    ```
-   example ./runall ../results/2017-12-26 -f -i 1
+   example: ./runall ../results/2017-12-26 -f -i 1
    ```
    Above code will run f-score test with non_TM data only
    
