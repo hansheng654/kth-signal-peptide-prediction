@@ -13,6 +13,13 @@ Description:
 
 /doc/log_book stored logs relate to this project
 
+## Requirements
+* Python 3
+* Numpy
+* glob
+* sklearn
+* matplotlib
+
 ## How to use the code to train and predict signal peptides?
 Under /bin folder, run ./runall SAVEPATH [argumemts]
 ```
