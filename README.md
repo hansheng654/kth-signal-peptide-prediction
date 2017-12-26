@@ -15,9 +15,11 @@ Description:
 
 ## How to use the code to train and predict signal peptides?
 Under /bin folder, run ./runall SAVEPATH [argumemts]
+```
 usage: runall [-h] [-pt] [--nfold NFOLD] [-f] [-p]
                             [-t THRESHOLD] [-i INPUT_MODE] [-q]
                             save_path
+```
 
 There are 3 function groups, they are 1.Performance Test, 2.F-score test, 3. Prediction
 
