@@ -20,6 +20,10 @@ Description:
 * sklearn
 * matplotlib
 
+### Training data
+Training data should be located under /data/negative_examples and /data/positive_examples
+The program will look for the training data under those path, please ensure the program is run under the bin folder of this repo
+
 ## How to use the code to train and predict signal peptides?
 Under /bin folder, run ./runall SAVEPATH [argumemts]
 ```
