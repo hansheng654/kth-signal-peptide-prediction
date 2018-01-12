@@ -7,11 +7,11 @@ Description:
 
 /data . All data are stored under /data folder
 
-/results . All Results are stored under /results folder, with each test-run stored into corresponding date
+/results . All Results are stored under /results folder, with each test-run stored into corresponding date, log books are here too
 
 /doc . All documentations relate to this project are store under /doc
 
-/doc/log_book stored logs relate to this project
+Logbooks are stored under results
 
 ## Requirements
 * Python 3
